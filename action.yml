@@ -14,13 +14,15 @@ inputs:
     required: true
     description: 'The root folder where the version file will be stored (e.g., versions)'
 outputs:
-  VERSION_NUMBER:
+  version:
     description: 'The computed semantic version'
+    value: ${{steps.version.outputs.version}}
 
 runs:
   using: 'composite'
   steps:
-    - run: |
+    - id: version
+      run: |
         VERSION_FILE="${{ inputs.version-folder }}/${{ inputs.service-name }}/VERSION"
 
         mkdir -p "$(dirname "$VERSION_FILE")"
@@ -53,5 +55,5 @@ runs:
           git push
         fi
 
-        echo "VERSION_NUMBER=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       shell: bash
