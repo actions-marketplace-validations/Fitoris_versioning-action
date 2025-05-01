@@ -1,6 +1,11 @@
 name: 'Service Versioning'
 description: 'Per-service semantic versioning for monorepos using tag detection or auto-bumping.'
 author: 'Zoltán Balogh'
+
+branding:
+  icon: 'tag'
+  color: 'purple'
+
 inputs:
   service-name:
     required: true
@@ -11,6 +16,7 @@ inputs:
 outputs:
   version:
     description: 'The computed semantic version'
+
 runs:
   using: 'composite'
   steps:
