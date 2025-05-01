@@ -13,6 +13,11 @@ inputs:
   version-folder:
     required: true
     description: 'The root folder where the version file will be stored (e.g., versions)'
+  retry-count:
+    required: false
+    default: '5'
+    description: 'Number of times to retry Git push operations if they fail due to race conditions'
+
 outputs:
   version:
     description: 'The computed semantic version'
@@ -22,11 +27,30 @@ runs:
   using: 'composite'
   steps:
     - id: version
+      shell: bash
       run: |
+        set -e
+        
         VERSION_FILE="${{ inputs.version-folder }}/${{ inputs.service-name }}/VERSION"
+        RETRY_COUNT="${{ inputs.retry-count }}"
 
         mkdir -p "$(dirname "$VERSION_FILE")"
 
+        commit_and_push() {
+          local tries=0
+          until git push || [ "$tries" -ge "$RETRY_COUNT" ]; do
+            tries=$((tries + 1))
+            echo "Git push failed — retry $tries/$RETRY_COUNT"
+            sleep 2
+            git pull --rebase
+          done
+        
+          if [ "$tries" -ge "$RETRY_COUNT" ]; then
+            echo "❌ Git push failed after $RETRY_COUNT attempts."
+            exit 1
+          fi
+        }
+        
         if [[ "${GITHUB_REF}" == refs/tags/${{ inputs.service-name }}@* ]]; then
           VERSION="${GITHUB_REF#refs/tags/${{ inputs.service-name }}@}"
           echo "$VERSION" > "$VERSION_FILE"
@@ -35,7 +59,7 @@ runs:
           git config user.email "actions@github.com"
           git add "$VERSION_FILE"
           git commit -m "chore(${{ inputs.service-name }}): set version from tag to $VERSION"
-          git push
+          commit_and_push
         else
           if [[ -f "$VERSION_FILE" ]]; then
             VERSION=$(cat "$VERSION_FILE")
@@ -52,8 +76,7 @@ runs:
           git config user.email "actions@github.com"
           git add "$VERSION_FILE"
           git commit -m "chore(${{ inputs.service-name }}): bump version to $VERSION"
-          git push
+          commit_and_push
         fi
 
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      shell: bash
