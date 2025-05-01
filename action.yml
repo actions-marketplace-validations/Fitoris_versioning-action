@@ -53,5 +53,5 @@ runs:
           git push
         fi
 
-        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "version=$VERSION" >> $GITHUB_ENV
       shell: bash
