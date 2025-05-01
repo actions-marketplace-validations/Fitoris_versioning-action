@@ -14,7 +14,7 @@ inputs:
     required: true
     description: 'The root folder where the version file will be stored (e.g., versions)'
 outputs:
-  version:
+  VERSION_NUMBER:
     description: 'The computed semantic version'
 
 runs:
@@ -53,5 +53,5 @@ runs:
           git push
         fi
 
-        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "VERSION_NUMBER=$VERSION" >> "$GITHUB_OUTPUT"
       shell: bash
