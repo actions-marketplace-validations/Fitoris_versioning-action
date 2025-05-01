@@ -1,0 +1,51 @@
+name: 'Service Versioning'
+description: 'Per-service semantic versioning for monorepos using tag detection or auto-bumping.'
+author: 'Zoltán Balogh'
+inputs:
+  service-name:
+    required: true
+    description: 'The name of the service to version (e.g., AuthService)'
+  version-folder:
+    required: true
+    description: 'The root folder where the version file will be stored (e.g., versions)'
+outputs:
+  version:
+    description: 'The computed semantic version'
+runs:
+  using: 'composite'
+  steps:
+    - run: |
+        VERSION_FILE="${{ inputs.version-folder }}/${{ inputs.service-name }}/VERSION"
+
+        mkdir -p "$(dirname "$VERSION_FILE")"
+
+        if [[ "${GITHUB_REF}" == refs/tags/${{ inputs.service-name }}@* ]]; then
+          VERSION="${GITHUB_REF#refs/tags/${{ inputs.service-name }}@}"
+          echo "$VERSION" > "$VERSION_FILE"
+
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add "$VERSION_FILE"
+          git commit -m "chore(${{ inputs.service-name,, }}): set version from tag to $VERSION"
+          git push
+        else
+          if [[ -f "$VERSION_FILE" ]]; then
+            VERSION=$(cat "$VERSION_FILE")
+          else
+            VERSION="0.0.0"
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          PATCH=$((PATCH + 1))
+          VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "$VERSION" > "$VERSION_FILE"
+
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add "$VERSION_FILE"
+          git commit -m "chore(${{ inputs.service-name,, }}): bump version to $VERSION"
+          git push
+        fi
+
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      shell: bash
