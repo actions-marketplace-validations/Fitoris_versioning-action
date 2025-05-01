@@ -1,0 +1,8 @@
+name: Service Versioning
+description: |
+  Per-service semantic versioning for monorepos. 
+  Automatically bumps versions or uses Git tags in the format Service@1.2.3. 
+  Versions are saved in structured version files per service.
+branding:
+  icon: tag
+  color: gray-dark
